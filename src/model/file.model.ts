@@ -1,19 +1,30 @@
-import mongoose from "mongoose";
+import mongoose, { Schema, Document } from "mongoose";
 
-export interface IFileMetadata {
+export interface IFile extends Document {
     filename: string;
     fileType: string;
+    size: number; 
+    content: Buffer; 
     folders: mongoose.Types.ObjectId[]; 
-    uploadedAt: Date;
+    uploadedAt: Date; 
 }
 
-const fileMetadataSchema = new mongoose.Schema<IFileMetadata>({
+const fileSchema = new Schema<IFile>({
     filename: {
         type: String,
         required: true,
+        trim: true,
     },
     fileType: {
         type: String,
+        required: true,
+    },
+    size: {
+        type: Number,
+        required: true,
+    },
+    content: {
+        type: Buffer,
         required: true,
     },
     folders: [{
@@ -26,4 +37,4 @@ const fileMetadataSchema = new mongoose.Schema<IFileMetadata>({
     },
 });
 
-export const FileMetadata = mongoose.model<IFileMetadata>("FileMetadata", fileMetadataSchema);
+export const File = mongoose.model<IFile>("File", fileSchema);

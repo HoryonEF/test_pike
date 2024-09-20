@@ -1,47 +1,56 @@
-
-import { Request } from "express";
-import { GridFsStorage } from "multer-gridfs-storage";
 import mongoose from "mongoose";
-import { GridFSBucket } from "mongodb";
+import { IFile, File } from "../model/file.model";
 
 
-const connection = mongoose.connect(process.env.DATABASE_URL || "mongodb://localhost:27017/PikeDB");
+export const createFile = async (
+  filename: string,
+  fileType: string,
+  size: number,
+  content: Buffer,
+  folderIds: string[]
+): Promise<IFile> => {
+  const folders = folderIds.map((id) => new mongoose.Types.ObjectId(id));
 
-/* const bucket = new GridFSBucket(mongoose.connection.db, {
-    bucketName: 'uploads' 
-});
-
-
-export const createFile = async (filename: string, content: string) => {
-    return new Promise((resolve, reject) => {
-        const uploadStream = bucket.openUploadStream(filename);
-
-        
-        uploadStream.end(Buffer.from(content, 'utf-8'), (error: any, file: unknown) => {
-            if (error) {
-                return reject(error); 
-            }
-            resolve(file); 
-        });
-    });
-}; */
-
-const storage = new GridFsStorage({
-    url: process.env.DATABASE_URL || "mongodb://localhost:27017/PikeDB",
-    file: (req, file) => {
-        return {
-            filename: file.originalname,
-            bucketName: 'uploads'
-        };
-    }
-});
+  const newFile = new File({
+    filename,
+    fileType,
+    size,
+    content,
+    folders,
+    uploadedAt: new Date(),
+  });
 
 
-export const uploadFile = async (req: Request) => {
-    if (!req.file) {
-        throw new Error("Nenhum arquivo foi enviado.");
-    }
-
-  
-    return req.file;
+  return await newFile.save();
 };
+
+export const updateFile = async (
+    fileId: string,
+    updates: Partial<IFile>
+  ): Promise<IFile | null> => {
+    if (!mongoose.Types.ObjectId.isValid(fileId)) {
+      throw new Error("ID de arquivo inválido.");
+    }
+  
+    return await File.findByIdAndUpdate(fileId, updates, { new: true }).exec();
+  };
+  
+  export const findOneFile = async (fileId: string): Promise<IFile | null> => {
+    if (!mongoose.Types.ObjectId.isValid(fileId)) {
+      throw new Error("ID de arquivo inválido.");
+    }
+  
+    return await File.findById(fileId).exec();
+  };
+  
+  export const findAllFiles = async (): Promise<IFile[]> => {
+    return await File.find().exec();
+  };
+  
+  export const deleteFile = async (fileId: string): Promise<IFile | null> => {
+    if (!mongoose.Types.ObjectId.isValid(fileId)) {
+      throw new Error("ID de arquivo inválido.");
+    }
+  
+    return await File.findByIdAndDelete(fileId).exec();
+  };
